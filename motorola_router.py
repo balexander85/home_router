@@ -101,7 +101,7 @@ class Forwarding:
         PortForwardingTable    0
 
     """
-    raise NotImplementedError("Need to implement")
+    NotImplementedError("Need to implement")
 
 
 if __name__ == '__main__':
