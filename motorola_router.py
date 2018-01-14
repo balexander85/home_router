@@ -10,13 +10,7 @@ user = config.get("configuration", "user")
 password = config.get("configuration", "password")
 router_url = config.get("configuration", "router_url")
 
-login_request_url = f"{router_url}/goform/login"
-logout_request_url = f"{router_url}/logout.asp"
-reboot_url = f"{router_url}/goform/RgConfiguration"
-rhdcp_url = f"{router_url}/RgDhcp.asp"
-
-table_header_bgcolor = "#4E97B9"
-table_row_bgcolor = "#E7DAAC"
+forwarding_url = f"{router_url}/goform/RgForwarding"
 
 
 class Router:
@@ -36,14 +30,24 @@ class Router:
 
     def __enter__(self):
         """Login in to router admin"""
-        self.session.post(
-            login_request_url, headers=self.headers, params=self.params
-        )
+        self.login()
         return self
 
     def __exit__(self, *args):
         """Logout in to router admin"""
-        self.session.get(logout_request_url, headers=self.headers)
+        self.logout()
+
+    def login(self) -> requests.Response:
+        """Login in to router admin"""
+        login_request_url = f"{router_url}/goform/login"
+        return self.session.post(
+            login_request_url, headers=self.headers, params=self.params
+        )
+
+    def logout(self) -> requests.Response:
+        """Logout in to router admin"""
+        logout_request_url = f"{router_url}/logout.asp"
+        return self.session.get(logout_request_url, headers=self.headers)
 
     def restart_wifi(self):
         """Send command to restart Wifi"""
@@ -51,6 +55,7 @@ class Router:
 
     def reboot(self):
         """Send command to reboot router"""
+        reboot_url = f"{router_url}/goform/RgConfiguration"
         return self.session.post(
             reboot_url, headers=self.headers, params={"SaveChanges": "Reboot"}
         )
@@ -60,6 +65,9 @@ class Router:
             List all the devices and status of
             the internal DHCP server for the LAN
         """
+        rhdcp_url = f"{router_url}/RgDhcp.asp"
+        table_header_bgcolor = "#4E97B9"
+        table_row_bgcolor = "#E7DAAC"
         response = self.session.get(
             rhdcp_url, headers=self.headers, params=self.params
         )
@@ -73,6 +81,27 @@ class Router:
         print("    ".join(table_header_map.values()))
         for row in rows:
             print("    ".join([x.text for x in row('td')]))
+
+
+class Forwarding:
+    """
+        NEED TO IMPLEMENT Add port forwarding
+
+        PortForwardingCreateRemove    0
+        PortForwardingLocalIp    XXX.XXX.XXX.XXX
+        PortForwardingLocalStartPort    21
+        PortForwardingLocalEndPort    21
+        PortForwardingExtIp    0.0.0.0
+        PortForwardingExtStartPort    21
+        PortForwardingExtEndPort    21
+        PortForwardingProtocol    4
+        PortForwardingDesc    FTP+Cloud
+        PortForwardingEnabled    0
+        PortForwardingApply    2
+        PortForwardingTable    0
+
+    """
+    raise NotImplementedError("Need to implement")
 
 
 if __name__ == '__main__':
