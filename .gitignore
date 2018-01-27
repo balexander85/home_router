@@ -1,4 +1,5 @@
 .idea/
 __pycache__/
-routerEnv/
+env/
 config.txt
+.DS_Store
