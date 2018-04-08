@@ -3,3 +3,4 @@ __pycache__/
 env/
 config.txt
 .DS_Store
+.python-version
