@@ -63,14 +63,38 @@ class Router:
 
     def restart_wifi(self):
         """Send command to restart Wifi"""
-        pass
+        restart_wifi_url = f"{router_url}/wlanRadio.asp"
+        base_params = {
+            'WirelessMacAddress': 0,
+            'WirelessEnable': 0,
+            'OutputPower': 100,
+            'Band': 2,
+            'NMode': 1,
+            'NSupReq': 0,
+            'NBandwidth': 20,
+            'ChannelNumber': 4,
+            'STBCTx': 0,
+            'restoreWirelessDefaults': 0,
+            'commitwlanRadio': 1,
+            'scanActions': 0
+        }
+        # disable WIFI
+        self.session.post(
+            restart_wifi_url, headers=self.headers, params=base_params
+        )
+        # now re-enable WIFI
+        base_params.update({'WirelessEnable': 1})
+        self.session.post(
+            restart_wifi_url, headers=self.headers, params=base_params
+        )
 
     def _reboot(self):
         """Send command to reboot router"""
         reboot_url = f"{router_url}/goform/RgConfiguration"
-        return self.session.post(
+        self.session.post(
             reboot_url, headers=self.headers, params={"SaveChanges": "Reboot"}
         )
+        exit("Rebooting.....")
 
     def list_devices(self):
         """
