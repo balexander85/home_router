@@ -39,9 +39,8 @@ class Router:
         super(Router, self).__init__()
         self.session = requests.Session()
         self.headers = {
-            'Accept':
-                'text/html,application/xhtml+xml,application/xml;i'
-                'q=0.9,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;i'
+                      'q=0.9,*/*;q=0.8',
             'Accept-Encoding': 'gzip, deflate'
         }
         self.params = dict(loginUsername=user, loginPassword=password)
@@ -98,32 +97,32 @@ class Router:
 
     def _reboot(self):
         """Send command to reboot router"""
-        reboot_url = f"{router_url}/goform/RgConfiguration"
+        reboot_url = f'{router_url}/goform/RgConfiguration'
         self.session.post(
-            reboot_url, headers=self.headers, params={"SaveChanges": "Reboot"}
+            reboot_url, headers=self.headers, params={'SaveChanges': 'Reboot'}
         )
-        exit("Rebooting.....")
+        exit('Rebooting.....')
 
     def list_devices(self):
-        """List all the devices and status of the
-           internal DHCP server for the LAN
+        """List all the devices and statuses of the internal
+           DHCP server for the LAN
         """
-        rhdcp_url = f"{router_url}/RgDhcp.asp"
-        table_header_bgcolor = "#4E97B9"
-        table_row_bgcolor = "#E7DAAC"
+        rhdcp_url = f'{router_url}/RgDhcp.asp'
+        table_header_bgcolor = '#4E97B9'
+        table_row_bgcolor = '#E7DAAC'
         response = self.session.get(
             rhdcp_url, headers=self.headers, params=self.params
         )
-        soup = BeautifulSoup(response.content, "html.parser")
+        soup = BeautifulSoup(response.content, 'html.parser')
         table_header_map = {
             str(i): x.text for i, x in enumerate(
-                soup.find("tr", attrs={'bgcolor': table_header_bgcolor})('td')
+                soup.find('tr', attrs={'bgcolor': table_header_bgcolor})('td')
         )
         }
-        rows = soup.findAll("tr", attrs={'bgcolor': table_row_bgcolor})
-        print("    ".join(table_header_map.values()))
+        rows = soup.findAll('tr', attrs={'bgcolor': table_row_bgcolor})
+        print('    '.join(table_header_map.values()))
         for row in rows:
-            print("    ".join([x.text for x in row('td')]))
+            print('    '.join([x.text for x in row('td')]))
 
 
 class Forwarding(Router):
@@ -132,82 +131,78 @@ class Forwarding(Router):
        Example Usage:
            with Forwarding() as f:
                f.get_forwarded_ips()
-               f.update(ip="192.168.0.21", port="80", desc="Dad Gum Dashboard", enabled=1)
+               f.update(
+                   ip='192.168.0.21',
+                   port='80',
+                   desc='Dad Gum Dashboard',
+                   enabled=1
+               )
                f.get_forwarded_ips()
     """
 
     def __init__(self):
         super(Forwarding, self).__init__()
-        self.forward_headers = {
-            "Accept":
-                "text/html,application/xhtml+xml,application/xml;"
-                "q=0.9,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Encoding":
-                "gzip, deflate",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Cache-Control": "max-age=0",
-            "Connection": "keep-alive",
-            "Content-Length": "332",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Host": f"{local_ip}",
-            "Origin": f"{router_url}",
-            "Referer": f"{router_url}/RgForwarding.asp",
-            "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/63.0.3239.132 Safari/537.36"
+        self.headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;'
+                      'q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'max-age=0',
+            'Connection': 'keep-alive',
+            'Content-Length': '332',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Host': local_ip,
+            'Origin': router_url,
+            'Referer': f'{router_url}/RgForwarding.asp',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/63.0.3239.132 Safari/537.36'
         }
 
     @staticmethod
     def form_data(ip: str, port: str, desc: str, enabled: int):
         return dict(
-            PortForwardingCreateRemove="0",
+            PortForwardingCreateRemove='0',
             PortForwardingLocalIp=ip,
             PortForwardingLocalStartPort=port,
             PortForwardingLocalEndPort=port,
-            PortForwardingExtIp="0.0.0.0",
+            PortForwardingExtIp='0.0.0.0',
             PortForwardingExtStartPort=port,
             PortForwardingExtEndPort=port,
-            PortForwardingProtocol="4",
+            PortForwardingProtocol='4',
             PortForwardingDesc=desc,
             PortForwardingEnabled=enabled,
-            PortForwardingApply="2",
-            PortForwardingTable="0",
+            PortForwardingApply='2',
+            PortForwardingTable='0',
         )
 
     def get_forwarded_ips(self):
+        """List all the devices and statuses of the internal DHCP servers for
+           the given LAN
         """
-            List all the devices and status of
-            the internal DHCP server for the LAN
-        """
-        forwarding_url = f"{router_url}/RgForwarding.asp"
+        forwarding_url = f'{router_url}/RgForwarding.asp'
         response = self.session.get(
             forwarding_url, headers=self.headers, params=self.params
         )
-        soup = BeautifulSoup(response.content, "html.parser")
+        soup = BeautifulSoup(response.content, 'html.parser')
         table_header = [row.text for row in soup.select(
-            ".table_data12 table tr th"
+            '.table_data12 table tr th'
         )][2:11]
-        rows = [row for row in soup.select(".table_data12 table tr")][2:]
-        print("    ".join(table_header))
+        rows = [row for row in soup.select('.table_data12 table tr')][2:]
+        print('    '.join(table_header))
         for row in rows:
-            print("    ".join([x.text for x in row('td')]))
+            print('    '.join([x.text for x in row('td')]))
 
-    def update(self, ip: str, port: str, desc: str, enabled: int):
-        """
-            Update existing IP Forwarding settings
-        """
+    def update(self, url: str, ip: str, port: str, desc: str, enabled: int):
+        """Update existing IP Forwarding settings"""
         form_data = self.form_data(
             ip=ip, port=port, desc=desc, enabled=enabled
         )
-        return self.session.post(
-            forwarding_url, headers=self.forward_headers, data=form_data
-        )
+        return self.session.post(url=url, headers=self.headers, data=form_data)
 
 
 if __name__ == '__main__':
 
     with Router() as r:
         r.list_devices()
-        #r._reboot()
-
