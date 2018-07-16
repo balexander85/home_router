@@ -47,11 +47,14 @@ class Router:
 
     def __enter__(self):
         """Login in to router admin"""
+        LOG.info('LOGGING IN...')
         self.login()
+        LOG.info('LOGGED IN...')
         return self
 
     def __exit__(self):
         """Logout in to router admin"""
+        LOG.info('LOGGING OUT...')
         self.logout()
 
     def login(self) -> requests.Response:
