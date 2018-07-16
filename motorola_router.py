@@ -50,7 +50,7 @@ class Router:
         self.login()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self):
         """Logout in to router admin"""
         self.logout()
 
@@ -87,19 +87,21 @@ class Router:
         }
         # disable WIFI
         self.session.post(
-            restart_wifi_url, headers=self.headers, params=base_params
+            url=restart_wifi_url, headers=self.headers, params=base_params
         )
         # now re-enable WIFI
         base_params.update({'WirelessEnable': 1})
         self.session.post(
-            restart_wifi_url, headers=self.headers, params=base_params
+            url=restart_wifi_url, headers=self.headers, params=base_params
         )
 
     def _reboot(self):
         """Send command to reboot router"""
         reboot_url = f'{router_url}/goform/RgConfiguration'
         self.session.post(
-            reboot_url, headers=self.headers, params={'SaveChanges': 'Reboot'}
+            url=reboot_url,
+            headers=self.headers,
+            params={'SaveChanges': 'Reboot'}
         )
         exit('Rebooting.....')
 
@@ -111,13 +113,14 @@ class Router:
         table_header_bgcolor = '#4E97B9'
         table_row_bgcolor = '#E7DAAC'
         response = self.session.get(
-            rhdcp_url, headers=self.headers, params=self.params
+            url=rhdcp_url, headers=self.headers, params=self.params
         )
         soup = BeautifulSoup(response.content, 'html.parser')
         table_header_map = {
-            str(i): x.text for i, x in enumerate(
+            str(i): x.text
+            for i, x in enumerate(
                 soup.find('tr', attrs={'bgcolor': table_header_bgcolor})('td')
-        )
+            )
         }
         rows = soup.findAll('tr', attrs={'bgcolor': table_row_bgcolor})
         print('    '.join(table_header_map.values()))
@@ -181,9 +184,9 @@ class Forwarding(Router):
         """List all the devices and statuses of the internal DHCP servers for
            the given LAN
         """
-        forwarding_url = f'{router_url}/RgForwarding.asp'
+        url = f'{router_url}/RgForwarding.asp'
         response = self.session.get(
-            forwarding_url, headers=self.headers, params=self.params
+            url=url, headers=self.headers, params=self.params
         )
         soup = BeautifulSoup(response.content, 'html.parser')
         table_header = [row.text for row in soup.select(
