@@ -1,4 +1,8 @@
-
+"""Accessing home router via local control because
+   for some reason the WiFi drops unexpectedly and
+   and I would like to restart router programatically.
+"""
+import argparse
 import logging
 import sys
 
@@ -6,23 +10,26 @@ import configparser
 import requests
 from bs4 import BeautifulSoup
 
-config = configparser.ConfigParser()
-config.read("config.txt")
+parser = argparse.ArgumentParser(description='Send command to router.')
+args = parser.parse_args()
 
-user = config.get("configuration", "user")
-password = config.get("configuration", "password")
-router_url = config.get("configuration", "router_url")
-local_ip = router_url.replace("http://", "")
-forwarding_url = f"{router_url}/goform/RgForwarding"
+config = configparser.ConfigParser()
+config.read('config.txt')
+
+user = config.get('configuration', 'user')
+password = config.get('configuration', 'password')
+router_url = config.get('configuration', 'router_url')
+local_ip = router_url.replace('http://', '')
+forwarding_url = f'{router_url}/goform/RgForwarding'
 
 
 logging.basicConfig(
-    level=logging.ERROR,
-    format="%(levelname)7s: %(message)s",
+    level=logging.INFO,
+    format='%(levelname)7s: %(message)s',
     stream=sys.stdout,
 )
 
-LOG = logging.getLogger("")
+LOG = logging.getLogger('')
 
 
 class Router:
@@ -76,7 +83,9 @@ class Router:
             'STBCTx': 0,
             'restoreWirelessDefaults': 0,
             'commitwlanRadio': 1,
-            'scanActions': 0
+            'scanActions': 0,
+            'loginUsername': user,
+            'loginPassword': password
         }
         # disable WIFI
         self.session.post(
@@ -97,9 +106,8 @@ class Router:
         exit("Rebooting.....")
 
     def list_devices(self):
-        """
-            List all the devices and status of
-            the internal DHCP server for the LAN
+        """List all the devices and status of the
+           internal DHCP server for the LAN
         """
         rhdcp_url = f"{router_url}/RgDhcp.asp"
         table_header_bgcolor = "#4E97B9"
@@ -120,8 +128,13 @@ class Router:
 
 
 class Forwarding(Router):
-    """
-        Setup port forwarding on the router to allow outbound connections
+    """Setup port forwarding on the router to allow outbound connections
+
+       Example Usage:
+           with Forwarding() as f:
+               f.get_forwarded_ips()
+               f.update(ip="192.168.0.21", port="80", desc="Dad Gum Dashboard", enabled=1)
+               f.get_forwarded_ips()
     """
 
     def __init__(self):
@@ -197,8 +210,5 @@ if __name__ == '__main__':
 
     with Router() as r:
         r.list_devices()
+        #r._reboot()
 
-    # with Forwarding() as f:
-    #     f.get_forwarded_ips()
-    #     f.update(ip="192.168.0.7", port="21", desc="FTP Cloud No", enabled=0)
-    #     f.get_forwarded_ips()
