@@ -39,11 +39,10 @@ class Router:
         super(Router, self).__init__()
         self.session = requests.Session()
         self.headers = {
-            "Accept":
-                "text/html,application/xhtml+xml,application/xml;"
-                "q=0.9,*/*;q=0.8",
-            "Accept-Encoding":
-                "gzip, deflate"
+            'Accept':
+                'text/html,application/xhtml+xml,application/xml;i'
+                'q=0.9,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate'
         }
         self.params = dict(loginUsername=user, loginPassword=password)
 
@@ -58,19 +57,19 @@ class Router:
 
     def login(self) -> requests.Response:
         """Login in to router admin"""
-        login_request_url = f"{router_url}/goform/login"
+        login_request_url = f'{router_url}/goform/login'
         return self.session.post(
             login_request_url, headers=self.headers, params=self.params
         )
 
     def logout(self) -> requests.Response:
         """Logout in to router admin"""
-        logout_request_url = f"{router_url}/logout.asp"
+        logout_request_url = f'{router_url}/logout.asp'
         return self.session.get(logout_request_url, headers=self.headers)
 
     def restart_wifi(self):
         """Send command to restart Wifi"""
-        restart_wifi_url = f"{router_url}/wlanRadio.asp"
+        restart_wifi_url = f'{router_url}/wlanRadio.asp'
         base_params = {
             'WirelessMacAddress': 0,
             'WirelessEnable': 0,
