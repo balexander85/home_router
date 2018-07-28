@@ -15,9 +15,10 @@ parser = argparse.ArgumentParser(
                 'router (reboot, list devices).'
 )
 parser.add_argument('--version', action='version', version='%(prog)s 1.0')
-parser.add_argument('-R', action='store_true', default=False,
-                    dest='reboot_switch',
-                    help='Use -R to send reboot command to router.')
+parser.add_argument(
+    '-R', '--reboot', action='store_true', default=False, dest='reboot_switch',
+    help='Use -R or --reboot to send reboot command to router.'
+)
 command_line_args = parser.parse_args()
 
 config = configparser.ConfigParser()
@@ -35,6 +36,12 @@ logging.basicConfig(
 )
 
 LOG = logging.getLogger('')
+
+
+def save_page(html: HTML, file_name: str = "test.html"):
+    """Helper function to save page as an html file."""
+    with open(file_name, "w") as f:
+        f.write(html.html)
 
 
 class Router:
