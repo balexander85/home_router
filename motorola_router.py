@@ -1,7 +1,7 @@
 """Accessing home router via local control because for some reason the WiFi
    drops unexpectedly and I would like to restart router programmatically.
 """
-import argparse
+from argparse import ArgumentParser, Namespace
 import logging
 from pathlib import Path
 from typing import List
@@ -18,18 +18,22 @@ from requests_html import (
 )
 
 
-parser = argparse.ArgumentParser(
-    description='Command line tool to send commands to the local '
-                'router (reboot, list devices).'
-)
-parser.add_argument(
-    '-V', '--version', action='version', version='%(prog)s 1.0'
-)
-parser.add_argument(
-    '-R', '--reboot', action='store_true', default=False, dest='reboot_switch',
-    help='Use -R or --reboot to send reboot command to router.'
-)
-command_line_args = parser.parse_args()
+def parse_args() -> Namespace:
+    """Setting command line args and returning parsed args."""
+    parser = ArgumentParser(
+        description='Command line tool to send commands to the local '
+                    'router (reboot, list devices).'
+    )
+    parser.add_argument(
+        '-V', '--version', action='version', version='%(prog)s 1.0'
+    )
+    parser.add_argument(
+        '-R', '--reboot', action='store_true', default=False,
+        dest='reboot_switch',
+        help='Use -R or --reboot to send reboot command to router.'
+    )
+    return parser.parse_args()
+
 
 file_path = Path(__file__).parent
 config_file_path = file_path / 'config.txt'
@@ -181,6 +185,7 @@ class Router:
 
 
 if __name__ == '__main__':
+    command_line_args = parse_args()
 
     with Router() as r:
         if command_line_args.reboot_switch:
