@@ -2,12 +2,12 @@
    drops unexpectedly and I would like to restart router programmatically.
 """
 from argparse import ArgumentParser, Namespace
-import logging
+from configparser import ConfigParser
+from logging import basicConfig, DEBUG, getLogger
 from pathlib import Path
 from typing import List
-import sys
+from sys import stdout
 
-import configparser
 from retrying import retry
 from requests_html import (
     Element,
@@ -16,6 +16,28 @@ from requests_html import (
     HTMLSession,
     TimeoutError
 )
+
+
+basicConfig(
+    level=DEBUG,
+    format='%(levelname)7s: %(message)s',
+    stream=stdout,
+)
+LOG = getLogger('')
+
+headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,'
+                      'image/webp,image/apng,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'max-age=0',
+            # 'Connection': 'keep-alive',
+            # 'Content-Length': '175',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/67.0.3396.99 Safari/537.36',
+        }
 
 
 def parse_args() -> Namespace:
@@ -35,38 +57,13 @@ def parse_args() -> Namespace:
     return parser.parse_args()
 
 
-file_path = Path(__file__).parent
-config_file_path = file_path / 'config.txt'
-
-config = configparser.ConfigParser()
-config.read(config_file_path)
-ROUTER_USERNAME = config.get('configuration', 'user')
-ROUTER_PASSWORD = config.get('configuration', 'password')
-ROUTER_URL = config.get('configuration', 'router_url')
-LOCAL_IP = ROUTER_URL.replace('http://', '')
-FORWARDING_URL = f'{ROUTER_URL}/goform/RgForwarding'
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(levelname)7s: %(message)s',
-    stream=sys.stdout,
-)
-
-LOG = logging.getLogger('')
-
-headers = {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,'
-                      'image/webp,image/apng,*/*;q=0.8',
-            'Accept-Encoding': 'gzip, deflate',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cache-Control': 'max-age=0',
-            # 'Connection': 'keep-alive',
-            # 'Content-Length': '175',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/67.0.3396.99 Safari/537.36',
-        }
+def load_config() -> ConfigParser:
+    """Loading configuration file into ConfigParser object"""
+    file_path = Path(__file__).parent
+    config_file_path = file_path / 'config.txt'
+    config_parser = ConfigParser()
+    config_parser.read(config_file_path)
+    return config_parser
 
 
 def save_page(html: HTML, file_name: str = "test.html"):
@@ -91,11 +88,13 @@ class Router:
     TABLE_HEADER = 'tr[bgcolor="#4E97B9"]'
     TABLE_ROWS = 'tr[bgcolor="#E7DAAC"]'
 
-    def __init__(self):
-        super(Router, self).__init__()
+    def __init__(self, user, password, ip_address):
         self.session: HTMLSession = HTMLSession()
+        self.user_name = user
+        self.password = password
+        self.ip_address = ip_address
 
-    def __enter__(self):
+    def __enter__(self) -> 'Router':
         """Login in to router admin"""
         self.session.get(url=ROUTER_URL)
         self.login()
@@ -186,8 +185,18 @@ class Router:
 
 if __name__ == '__main__':
     command_line_args = parse_args()
+    file_configs = load_config()
+    ROUTER_USERNAME = file_configs.get('configuration', 'user')
+    ROUTER_PASSWORD = file_configs.get('configuration', 'password')
+    ROUTER_URL = file_configs.get('configuration', 'router_url')
+    FORWARDING_URL = f'{ROUTER_URL}/goform/RgForwarding'
+    LOCAL_IP = ROUTER_URL.replace('http://', '')
 
-    with Router() as r:
+    with Router(
+            user=ROUTER_USERNAME,
+            password=ROUTER_PASSWORD,
+            ip_address=LOCAL_IP
+    ) as r:
         if command_line_args.reboot_switch:
             LOG.info('REBOOTING.....')
             # r.reboot()
