@@ -1,4 +1,4 @@
-Using python's BeautifulSoup and Requests libraries to interact with
+Using python's Request-html library to interact with
 my motorola router at home.
 
 contents of config.txt:
