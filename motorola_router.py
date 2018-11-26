@@ -3,6 +3,7 @@
 """
 import argparse
 import logging
+from pathlib import Path
 from typing import List
 import sys
 
@@ -30,8 +31,11 @@ parser.add_argument(
 )
 command_line_args = parser.parse_args()
 
+file_path = Path(__file__).parent
+config_file_path = file_path / 'config.txt'
+
 config = configparser.ConfigParser()
-config.read('config.txt')
+config.read(config_file_path)
 ROUTER_USERNAME = config.get('configuration', 'user')
 ROUTER_PASSWORD = config.get('configuration', 'password')
 ROUTER_URL = config.get('configuration', 'router_url')
