@@ -1,5 +1,7 @@
-"""Accessing home router via local control because for some reason the WiFi
-   drops unexpectedly and I would like to restart router programmatically.
+"""Module to access Motorola Router with python request_html
+
+Accessing my home router via local control because for some reason the WiFi
+drops unexpectedly and I would like to restart router programmatically.
 """
 from argparse import ArgumentParser, Namespace
 from configparser import ConfigParser
@@ -14,7 +16,6 @@ from requests_html import (
     HTML,
     HTMLResponse,
     HTMLSession,
-    TimeoutError
 )
 
 
@@ -24,20 +25,6 @@ basicConfig(
     stream=stdout,
 )
 LOG = getLogger('')
-
-headers = {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,'
-                      'image/webp,image/apng,*/*;q=0.8',
-            'Accept-Encoding': 'gzip, deflate',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cache-Control': 'max-age=0',
-            # 'Connection': 'keep-alive',
-            # 'Content-Length': '175',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/67.0.3396.99 Safari/537.36',
-        }
 
 
 def parse_args() -> Namespace:
@@ -82,59 +69,83 @@ def get_page_selected_selects_as_dict(html: HTML) -> dict:
     }
 
 
+config = load_config()
+ROUTER_USERNAME = config.get('configuration', 'user')
+ROUTER_PASSWORD = config.get('configuration', 'password')
+ROUTER_URL = config.get('configuration', 'router_url')
+
+
 class Router:
     """Motorola Router"""
 
+    FORWARDING_URL = '{}/goform/RgForwarding'
     TABLE_HEADER = 'tr[bgcolor="#4E97B9"]'
     TABLE_ROWS = 'tr[bgcolor="#E7DAAC"]'
+    HEADERS = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;'
+                  'q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+    }
 
-    def __init__(self, user, password, ip_address):
+    def __init__(self, user: str, password: str, url: str):
         self.session: HTMLSession = HTMLSession()
-        self.user_name = user
-        self.password = password
-        self.ip_address = ip_address
+        self.user_name: str = user
+        self.password: str = password
+        self.url: str = url
+        self.ip_address: str = self.url.replace('http://', '')
+        self.params = {'loginUsername': user, 'loginPassword': password}
 
-    def __enter__(self) -> 'Router':
-        """Login in to router admin"""
+    def __enter__(self):
+        """Login to router admin site."""
         self.session.get(url=ROUTER_URL)
         self.login()
-        LOG.info('LOGGED IN...')
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Logout in to router admin"""
+        """Logout of router admin site."""
         self.logout()
+
+    @property
+    def login_url(self) -> str:
+        """Return url for login page."""
+        return f'{self.url}/goform/login'
+
+    @property
+    def logout_url(self) -> str:
+        """Return url for logout page."""
+        return f'{self.url}/logout.asp'
+
+    @property
+    def reboot_url(self) -> str:
+        """Return url for reboot url."""
+        return f'{self.url}/goform/RgConfiguration'
 
     def login(self):
         """Login in to router admin"""
         LOG.info('LOGGING IN...')
-        login_request_url = f'{ROUTER_URL}/goform/login'
-        self.session.post(url=login_request_url)
+        self.session.post(
+            url=self.login_url, headers=self.HEADERS, data=self.params
+        )
+        LOG.info('LOGGED IN...')
 
     @retry(wait_fixed=500, stop_max_attempt_number=5)
     def logout(self):
         """Logout in to router admin"""
         LOG.info('LOGGING OUT...')
-        logout_request_url = f'{ROUTER_URL}/logout.asp'
-        try:
-            self.session.get(url=logout_request_url)
-        except TimeoutError as e:
-            LOG.info(f'Error: {e} attempting to log out.')
+        self.session.get(url=self.logout_url)
+        LOG.info('LOGGED OUT...')
 
     def reboot(self):
         """Send command to reboot router"""
-        LOG.info('Rebooting')
-        reboot_url = f'{ROUTER_URL}/goform/RgConfiguration'
-        try:
-            self.session.post(url=reboot_url, timeout=5)
-        except TimeoutError as e:
-            LOG.info(f'Error: {e} attempting to log out.')
+        LOG.info('Rebooting....')
+        self.session.post(url=self.reboot_url, timeout=5)
+        LOG.info('Reboot command completed.')
 
     def disable_wifi(self):
         """Disable WiFi"""
         LOG.info('DISABLING WIFI...')
-        wireless_url = f'{ROUTER_URL}/wlanRadio.asp'
-        wireless_form = f'{ROUTER_URL}/goform/wlanRadio'
+        wireless_url = f'{self.url}/wlanRadio.asp'
+        wireless_form = f'{self.url}/goform/wlanRadio'
         response: HTMLResponse = self.session.get(wireless_url)
         html = response.html
         current_params = get_page_selected_selects_as_dict(html=html)
@@ -152,8 +163,8 @@ class Router:
     def enable_wifi(self):
         """Disable WiFi"""
         LOG.info('DISABLING WIFI...')
-        wireless_url = f'{ROUTER_URL}/wlanRadio.asp'
-        wireless_form = f'{ROUTER_URL}/goform/wlanRadio'
+        wireless_url = f'{self.url}/wlanRadio.asp'
+        wireless_form = f'{self.url}/goform/wlanRadio'
         response: HTMLResponse = self.session.get(wireless_url)
         html = response.html
         current_params = get_page_selected_selects_as_dict(html=html)
@@ -166,11 +177,9 @@ class Router:
         assert current_params['WirelessEnable'] == '1'
 
     def list_devices(self):
-        """List all the devices and statuses of the internal
-           DHCP server for the LAN
-        """
+        """List devices & statuses of the internal DHCP server for the LAN"""
         LOG.info('Getting list of devices on network.')
-        rhdcp_url: str = f'{ROUTER_URL}/RgDhcp.asp'
+        rhdcp_url: str = f'{self.url}/RgDhcp.asp'
         response: HTMLResponse = self.session.get(url=rhdcp_url)
         html: HTML = response.html
         header_row: Element = html.find(self.TABLE_HEADER, first=True)
@@ -185,17 +194,11 @@ class Router:
 
 if __name__ == '__main__':
     command_line_args = parse_args()
-    file_configs = load_config()
-    ROUTER_USERNAME = file_configs.get('configuration', 'user')
-    ROUTER_PASSWORD = file_configs.get('configuration', 'password')
-    ROUTER_URL = file_configs.get('configuration', 'router_url')
-    FORWARDING_URL = f'{ROUTER_URL}/goform/RgForwarding'
-    LOCAL_IP = ROUTER_URL.replace('http://', '')
 
     with Router(
             user=ROUTER_USERNAME,
             password=ROUTER_PASSWORD,
-            ip_address=LOCAL_IP
+            url=ROUTER_URL
     ) as r:
         if command_line_args.reboot_switch:
             LOG.info('REBOOTING.....')
