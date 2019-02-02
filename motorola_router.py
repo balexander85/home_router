@@ -4,25 +4,21 @@ Accessing my home router via local control because for some reason the WiFi
 drops unexpectedly and I would like to restart router programmatically.
 """
 
-from logging import basicConfig, DEBUG, getLogger
-from sys import stdout
-
 from furl import furl
 from retrying import retry
 from requests_html import (
     HTMLResponse,
     HTMLSession,
 )
+from typing import Dict
 
-from pages.basic_page import DHCP
-from util import get_page_selected_selects_as_dict, load_config, parse_args
-
-basicConfig(
-    level=DEBUG,
-    format='%(levelname)7s: %(message)s',
-    stream=stdout,
+from pages import DHCP, Login
+from util import (
+    LOGGER,
+    get_page_selected_selects_as_dict,
+    load_config,
+    parse_args
 )
-LOG = getLogger('')
 
 
 config = load_config()
@@ -49,22 +45,19 @@ class Router:
         self.password: str = password
         self.url: furl = furl(url)
         self.ip_address: str = self.url.host
-        self.params = {'loginUsername': user, 'loginPassword': password}
+        self.params: Dict = {'loginUsername': user, 'loginPassword': password}
 
     def __enter__(self):
         """Login to router admin site."""
-        self.session.get(url=ROUTER_URL)
-        self.login()
+        login_page: Login = Login(base_url=self.url,
+                                  session=self.session,
+                                  payload=self.params)
+        login_page.login()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Logout of router admin site."""
         self.logout()
-
-    @property
-    def login_url(self) -> str:
-        """Return url for login page."""
-        return f'{self.url}/goform/login'
 
     @property
     def logout_url(self) -> str:
@@ -76,30 +69,22 @@ class Router:
         """Return url for reboot url."""
         return f'{self.url}/goform/RgConfiguration'
 
-    def login(self):
-        """Login in to router admin"""
-        LOG.info('LOGGING IN...')
-        self.session.post(
-            url=self.login_url, headers=self.HEADERS, data=self.params
-        )
-        LOG.info('LOGGED IN...')
-
     @retry(wait_fixed=500, stop_max_attempt_number=5)
     def logout(self):
         """Logout in to router admin"""
-        LOG.info('LOGGING OUT...')
+        LOGGER.info('LOGGING OUT...')
         self.session.get(url=self.logout_url, headers=self.HEADERS)
-        LOG.info('LOGGED OUT...')
+        LOGGER.info('LOGGED OUT...')
 
     def reboot(self):
         """Send command to reboot router"""
-        LOG.info('Rebooting....')
+        LOGGER.info('Rebooting....')
         self.session.post(url=self.reboot_url, timeout=5)
-        LOG.info('Reboot command completed.')
+        LOGGER.info('Reboot command completed.')
 
     def disable_wifi(self):
         """Disable WiFi"""
-        LOG.info('DISABLING WIFI...')
+        LOGGER.info('DISABLING WIFI...')
         wireless_url = f'{self.url}/wlanRadio.asp'
         wireless_form = f'{self.url}/goform/wlanRadio'
         response: HTMLResponse = self.session.get(wireless_url)
@@ -118,7 +103,7 @@ class Router:
 
     def enable_wifi(self):
         """Disable WiFi"""
-        LOG.info('DISABLING WIFI...')
+        LOGGER.info('DISABLING WIFI...')
         wireless_url = f'{self.url}/wlanRadio.asp'
         wireless_form = f'{self.url}/goform/wlanRadio'
         response: HTMLResponse = self.session.get(wireless_url)
@@ -147,9 +132,8 @@ if __name__ == '__main__':
             url=ROUTER_URL
     ) as r:
         if command_line_args.reboot_switch:
-            LOG.info('REBOOTING.....')
-            # r.reboot()
+            LOGGER.info('REBOOTING.....')
+            r.reboot()
             # r.disable_wifi()
         else:
-            LOG.info('GETTING LIST OF DEVICES')
             r.list_devices()

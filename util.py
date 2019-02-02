@@ -1,10 +1,19 @@
 """Util.py"""
-
 from argparse import ArgumentParser, Namespace
+from logging import basicConfig, DEBUG, INFO, getLogger
 from configparser import ConfigParser
 from pathlib import Path
+from sys import stdout
 
 from requests_html import HTML
+
+
+basicConfig(
+    level=INFO,
+    format='%(levelname)7s: %(message)s',
+    stream=stdout,
+)
+LOGGER = getLogger(__file__)
 
 
 def get_page_selected_selects_as_dict(html: HTML) -> dict:
