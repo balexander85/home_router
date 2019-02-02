@@ -5,14 +5,13 @@ drops unexpectedly and I would like to restart router programmatically.
 """
 
 from furl import furl
-from retrying import retry
 from requests_html import (
     HTMLResponse,
     HTMLSession,
 )
 from typing import Dict
 
-from pages import DHCP, Login
+from pages import DHCP, Login, Logout
 from util import (
     LOGGER,
     get_page_selected_selects_as_dict,
@@ -57,24 +56,14 @@ class Router:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Logout of router admin site."""
-        self.logout()
-
-    @property
-    def logout_url(self) -> str:
-        """Return url for logout page."""
-        return f'{self.url}/logout.asp'
+        logout_page: Logout = Logout(base_url=self.url,
+                                     session=self.session)
+        logout_page.logout()
 
     @property
     def reboot_url(self) -> str:
         """Return url for reboot url."""
         return f'{self.url}/goform/RgConfiguration'
-
-    @retry(wait_fixed=500, stop_max_attempt_number=5)
-    def logout(self):
-        """Logout in to router admin"""
-        LOGGER.info('LOGGING OUT...')
-        self.session.get(url=self.logout_url, headers=self.HEADERS)
-        LOGGER.info('LOGGED OUT...')
 
     def reboot(self):
         """Send command to reboot router"""
