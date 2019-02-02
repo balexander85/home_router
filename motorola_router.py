@@ -3,21 +3,19 @@
 Accessing my home router via local control because for some reason the WiFi
 drops unexpectedly and I would like to restart router programmatically.
 """
-from argparse import ArgumentParser, Namespace
-from configparser import ConfigParser
+
 from logging import basicConfig, DEBUG, getLogger
-from pathlib import Path
-from typing import List
 from sys import stdout
 
+from furl import furl
 from retrying import retry
 from requests_html import (
-    Element,
-    HTML,
     HTMLResponse,
     HTMLSession,
 )
 
+from pages.basic_page import DHCP
+from util import get_page_selected_selects_as_dict, load_config, parse_args
 
 basicConfig(
     level=DEBUG,
@@ -25,48 +23,6 @@ basicConfig(
     stream=stdout,
 )
 LOG = getLogger('')
-
-
-def parse_args() -> Namespace:
-    """Setting command line args and returning parsed args."""
-    parser = ArgumentParser(
-        description='Command line tool to send commands to the local '
-                    'router (reboot, list devices).'
-    )
-    parser.add_argument(
-        '-V', '--version', action='version', version='%(prog)s 1.0'
-    )
-    parser.add_argument(
-        '-R', '--reboot', action='store_true', default=False,
-        dest='reboot_switch',
-        help='Use -R or --reboot to send reboot command to router.'
-    )
-    return parser.parse_args()
-
-
-def load_config() -> ConfigParser:
-    """Loading configuration file into ConfigParser object"""
-    file_path = Path(__file__).parent
-    config_file_path = file_path / 'config.txt'
-    config_parser = ConfigParser()
-    config_parser.read(config_file_path)
-    return config_parser
-
-
-def save_page(html: HTML, file_name: str = "test.html"):
-    """Helper function to save page as an html file."""
-    with open(file_name, "w") as f:
-        f.write(html.html)
-
-
-def get_page_selected_selects_as_dict(html: HTML) -> dict:
-    """Finds all of the selects on page and parses the select name as key
-    and the selected option as the value"""
-    return {
-        e.attrs['name']: e.find(
-            'option[selected="selected"]', first=True).text
-        for e in html.find('select')
-    }
 
 
 config = load_config()
@@ -91,8 +47,8 @@ class Router:
         self.session: HTMLSession = HTMLSession()
         self.user_name: str = user
         self.password: str = password
-        self.url: str = url
-        self.ip_address: str = self.url.replace('http://', '')
+        self.url: furl = furl(url)
+        self.ip_address: str = self.url.host
         self.params = {'loginUsername': user, 'loginPassword': password}
 
     def __enter__(self):
@@ -132,7 +88,7 @@ class Router:
     def logout(self):
         """Logout in to router admin"""
         LOG.info('LOGGING OUT...')
-        self.session.get(url=self.logout_url)
+        self.session.get(url=self.logout_url, headers=self.HEADERS)
         LOG.info('LOGGED OUT...')
 
     def reboot(self):
@@ -178,18 +134,8 @@ class Router:
 
     def list_devices(self):
         """List devices & statuses of the internal DHCP server for the LAN"""
-        LOG.info('Getting list of devices on network.')
-        rhdcp_url: str = f'{self.url}/RgDhcp.asp'
-        response: HTMLResponse = self.session.get(url=rhdcp_url)
-        html: HTML = response.html
-        header_row: Element = html.find(self.TABLE_HEADER, first=True)
-        rows: List[Element] = html.find(self.TABLE_ROWS)
-        table_header_map: dict = {
-            str(i): x.text for i, x in enumerate(header_row.find('td'))
-        }
-        print('    '.join(table_header_map.values()))
-        for row in rows:
-            print('    '.join([e.text for e in row.find('td')]))
+        dhcp = DHCP(base_url=self.url, session=self.session)
+        dhcp.list_devices()
 
 
 if __name__ == '__main__':
