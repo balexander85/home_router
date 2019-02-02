@@ -1,5 +1,4 @@
 """Collection of page objects that are located under the Basic tab"""
-from furl import furl
 from logging import basicConfig, DEBUG, getLogger
 from sys import stdout
 from typing import List
@@ -8,8 +7,9 @@ from requests_html import (
     Element,
     HTML,
     HTMLResponse,
-    HTMLSession,
 )
+
+from pages.base_page import Page
 
 basicConfig(
     level=DEBUG,
@@ -23,7 +23,7 @@ class Setup:
     pass
 
 
-class DHCP:
+class DHCP(Page):
     """Page that displays Hosts with IP's that are connected to network
 
     This page allows configuration and status of the optional
@@ -32,10 +32,6 @@ class DHCP:
     PATH = 'RgDhcp.asp'
     TABLE_HEADER = 'tr[bgcolor="#4E97B9"]'
     TABLE_ROWS = 'tr[bgcolor="#E7DAAC"]'
-
-    def __init__(self, base_url: furl, session: HTMLSession):
-        self.session = session
-        self.url = base_url.add(path=self.PATH)
 
     def list_devices(self):
         """List devices & statuses of the internal DHCP server for the LAN"""
