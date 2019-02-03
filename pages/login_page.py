@@ -19,7 +19,7 @@ class Login(Page):
     def login(self) -> HTMLResponse:
         """Login in to router admin"""
         LOGGER.info('LOGGING IN...')
-        response = self.post()
+        response: HTMLResponse = self.post()
         connectivity_state_row: Element = \
             response.html.find('tr[bgcolor="#E7DAAC"]')[1]
         connectivity_state: str = connectivity_state_row.find('td')[1].text

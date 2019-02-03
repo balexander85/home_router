@@ -1,5 +1,7 @@
 """Logout page"""
 
+from requests_html import HTMLResponse
+
 from pages.base_page import Page
 from util import LOGGER
 
@@ -9,8 +11,12 @@ class Logout(Page):
 
     PATH = 'logout.asp'
 
-    def logout(self):
+    def logout(self) -> HTMLResponse:
         """Login in to router admin"""
         LOGGER.info('LOGGING OUT...')
-        self.get()
+        response: HTMLResponse = self.get()
+        assert response.html.search(
+            'Please enter {} and password to login.'
+        ), 'Failed to logout, not on login page.'
         LOGGER.info('LOGGED OUT...')
+        return response
