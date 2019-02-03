@@ -54,5 +54,6 @@ def parse_args() -> Namespace:
 
 def save_page(html: HTML, file_name: str = "test.html"):
     """Helper function to save page as an html file."""
+    LOGGER.info(msg=f"Saving html to file: {file_name}")
     with open(file_name, "w") as f:
         f.write(html.html)

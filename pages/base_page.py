@@ -5,12 +5,14 @@ from furl import furl
 from requests_html import HTML, HTMLResponse, HTMLSession
 from retrying import retry
 
-from util import LOGGER
+from util import LOGGER, save_page
 
 
 class Page:
 
     PATH = ''
+    TABLE_HEADER = 'tr[bgcolor="#4E97B9"]'
+    TABLE_ROWS = 'tr[bgcolor="#E7DAAC"]'
 
     def __init__(
             self,
@@ -36,8 +38,7 @@ class Page:
 
     def save_page(self, file_name: str = "test.html"):
         """Helper function to save page as an html file."""
-        with open(file_name, "w") as f:
-            f.write(self.html.html)
+        save_page(html=self.html, file_name=file_name)
 
     @retry(wait_fixed=500, stop_max_attempt_number=5)
     def post(self) -> HTMLResponse:

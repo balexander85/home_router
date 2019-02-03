@@ -20,8 +20,6 @@ class DHCP(Page):
     internal DHCP server for the LAN.
     """
     PATH = 'RgDhcp.asp'
-    TABLE_HEADER = 'tr[bgcolor="#4E97B9"]'
-    TABLE_ROWS = 'tr[bgcolor="#E7DAAC"]'
 
     def list_devices(self):
         """List devices & statuses of the internal DHCP server for the LAN"""
