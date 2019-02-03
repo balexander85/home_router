@@ -16,7 +16,7 @@ class Logout(Page):
         LOGGER.info('LOGGING OUT...')
         response: HTMLResponse = self.get()
         assert response.html.search('You are {} logged out.'), (
-            f'Failed to logout. HTML: {response.html}'
+            f'Failed to logout. HTML: {response.html.html}'
         )
         LOGGER.info('LOGGED OUT...')
         return response
