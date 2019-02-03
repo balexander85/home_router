@@ -20,8 +20,9 @@ class Login(Page):
         """Login in to router admin"""
         LOGGER.info('LOGGING IN...')
         response: HTMLResponse = self.post()
-        connectivity_state_row: Element = \
-            response.html.find('tr[bgcolor="#E7DAAC"]')[1]
+        rows = response.html.find(self.TABLE_ROWS)
+        assert rows, f"Table rows but none found. HTML: {response.html.html}"
+        connectivity_state_row: Element = rows[1]
         connectivity_state: str = connectivity_state_row.find('td')[1].text
         assert connectivity_state == ConnectivityState.OK.value, (
             f"Expected Connectivity State: {ConnectivityState.OK.value}"
