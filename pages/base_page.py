@@ -24,12 +24,9 @@ class Page:
         self.session: HTMLSession = session
         self.payload: Dict = payload
 
-    @retry(wait_fixed=500, stop_max_attempt_number=5)
-    def get(self) -> HTMLResponse:
-        LOGGER.debug(msg=f"GETing url: {self.url}")
-        response: HTMLResponse = self.session.get(url=self.url,
-                                                  headers=self.session.headers)
-        return response
+    def __repr__(self) -> str:
+        """String representation of Page object."""
+        return f"<class {self.__class__.__name__} base_url='{self.base_url}'>"
 
     @property
     def html(self) -> HTML:
@@ -40,9 +37,12 @@ class Page:
         """Create URL on demand"""
         return self.base_url.set(path=self.PATH)
 
-    def save_page(self, file_name: str = "test.html"):
-        """Helper function to save page as an html file."""
-        save_page(html=self.html, file_name=file_name)
+    @retry(wait_fixed=500, stop_max_attempt_number=5)
+    def get(self) -> HTMLResponse:
+        LOGGER.debug(msg=f"GETing url: {self.url}")
+        response: HTMLResponse = self.session.get(url=self.url,
+                                                  headers=self.session.headers)
+        return response
 
     @retry(wait_fixed=500, stop_max_attempt_number=5)
     def post(self) -> HTMLResponse:
@@ -53,3 +53,7 @@ class Page:
                               headers=self.session.headers,
                               data=self.payload)
         return response
+
+    def save_page(self, file_name: str = "test.html"):
+        """Helper function to save page as an html file."""
+        save_page(html=self.html, file_name=file_name)
