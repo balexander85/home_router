@@ -23,7 +23,6 @@ class Page:
         self.base_url: furl = base_url
         self.session: HTMLSession = session
         self.payload: Dict = payload
-        self.url: str = self.base_url.set(path=self.PATH)
 
     @retry(wait_fixed=500, stop_max_attempt_number=5)
     def get(self) -> HTMLResponse:
@@ -35,6 +34,11 @@ class Page:
     @property
     def html(self) -> HTML:
         return self.get().html
+
+    @property
+    def url(self) -> str:
+        """Create URL on demand"""
+        return self.base_url.set(path=self.PATH)
 
     def save_page(self, file_name: str = "test.html"):
         """Helper function to save page as an html file."""
