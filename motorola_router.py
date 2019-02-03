@@ -11,7 +11,7 @@ from requests_html import (
 )
 from typing import Dict
 
-from pages import DHCP, Login, Logout
+from pages import DHCP, Login, Logout, Configuration
 from util import (
     LOGGER,
     get_page_selected_selects_as_dict,
@@ -61,15 +61,11 @@ class Router:
                                      session=self.session)
         logout_page.logout()
 
-    @property
-    def reboot_url(self) -> str:
-        """Return url for reboot url."""
-        return f'{self.url}/goform/RgConfiguration'
-
     def reboot(self):
         """Send command to reboot router"""
         LOGGER.info('Rebooting....')
-        self.session.post(url=self.reboot_url, timeout=5)
+        config_page = Configuration(base_url=self.url, session=self.session)
+        config_page.reboot()
         LOGGER.info('Reboot command completed.')
 
     def disable_wifi(self):

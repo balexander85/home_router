@@ -15,8 +15,8 @@ class Logout(Page):
         """Login in to router admin"""
         LOGGER.info('LOGGING OUT...')
         response: HTMLResponse = self.get()
-        assert response.html.search(
-            'Please enter {} and password to login.'
-        ), 'Failed to logout, not on login page.'
+        assert response.html.search('You are {} logged out.'), (
+            f'Failed to logout. HTML: {response.html}'
+        )
         LOGGER.info('LOGGED OUT...')
         return response
