@@ -21,7 +21,7 @@ class Login(Page):
         LOGGER.info('LOGGING IN...')
         response: HTMLResponse = self.post()
         rows = response.html.find(self.TABLE_ROWS)
-        assert rows, f"Table rows but none found. HTML: {response.html.html}"
+        assert rows, f"Table rows but none found. HTML: \n{response.html.html}"
         connectivity_state_row: Element = rows[1]
         connectivity_state: str = connectivity_state_row.find('td')[1].text
         assert connectivity_state == ConnectivityState.OK.value, (
