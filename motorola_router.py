@@ -4,12 +4,15 @@ Accessing my home router via local control because for some reason the WiFi
 drops unexpectedly and I would like to restart router programmatically.
 """
 
+__author__ = 'Brian Alexander'
+
+from typing import Dict
+
 from furl import furl
 from requests_html import (
     HTMLResponse,
     HTMLSession,
 )
-from typing import Dict
 
 from pages import DHCP, Login, Logout, Configuration
 from util import (
